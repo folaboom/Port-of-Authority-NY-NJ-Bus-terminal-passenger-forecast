@@ -1,0 +1,143 @@
+---
+title: "Port Of Authority"
+author: "Group 4"
+date: "2025-12-15"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+library(readr)
+library(dplyr)
+library(stringr)
+library(lubridate)
+library(ggplot2)
+```
+
+
+
+```{r}
+#load dataset
+df <- read_csv("weekly_carrier_routes_2020-12_to_2025-08(Raw Data).csv",show_col_types = FALSE)
+names(df) <- make.names(names(df))
+View(df)
+```
+
+
+```{r}
+date_try <- c("Start.Date","Start_Date","Week_Start_Date","WeekStart","Date")
+pax_try  <- c("Passengers","Passenger","Pax","Total_Passengers","TotalPassengers")
+
+date_col <- intersect(date_try, names(df))[1]
+pax_col  <- intersect(pax_try,  names(df))[1]
+
+if (is.na(date_col)) date_col <- names(df)[str_detect(tolower(names(df)), "date|week|start")][1]
+if (is.na(pax_col))  pax_col  <- names(df)[str_detect(tolower(names(df)), "passenger|pax")][1]
+
+```
+
+```{r}
+cat("Chosen date column:", date_col, "\n")
+cat("Chosen pax  column:", pax_col,  "\n")
+
+if (is.na(date_col) || is.na(pax_col)) {
+  stop(paste("Could not identify required columns. Columns are:\n", paste(names(df), collapse=", ")))
+}
+```
+
+
+```{r}
+cat("Using date column:", date_col, "\n")
+cat("Using passenger column:", pax_col, "\n")
+```
+
+
+```{r}
+df <- df %>%
+  mutate(
+    Date = parse_date_time(as.character(.data[[date_col]]),
+                           orders = c("ymd","mdy","dmy","Ymd HMS","mdY HMS","dmY HMS")),
+    Year = year(Date)
+  )
+```
+
+
+```{r}
+# CLEAN PASSENGERS (CHARACTER -> NUMERIC) ------------------
+df <- df %>%
+  mutate(
+    Passengers_num = as.character(.data[[pax_col]]) %>%
+      str_replace_all(",", "") %>%          # remove commas: "12,345" -> "12345"
+      str_replace_all("[^0-9.]", "") %>%    # remove any symbols/letters
+      na_if("") %>%
+      as.numeric()
+  )
+```
+
+
+```{r}
+# How many got parsed
+cat("Non-missing passenger values:", sum(!is.na(df$Passengers_num)), "out of", nrow(df), "\n")
+
+```
+
+```{r}
+# YEARLY TOTALS
+yearly_df <- df %>%
+  filter(!is.na(Year), !is.na(Passengers_num)) %>%
+  group_by(Year) %>%
+  summarise(Total_Passengers = sum(Passengers_num, na.rm = TRUE), .groups = "drop") %>%
+  arrange(Year)
+
+print(yearly_df)
+```
+
+
+```{r}
+# Using Regression Model
+model <- lm(Total_Passengers ~ Year, data = yearly_df)
+print(summary(model))
+```
+
+```{r}
+# FORECAST 2026–2030 
+future_years <- data.frame(Year = 2026:2030)
+pred <- predict(model, newdata = future_years, interval = "prediction")
+
+projection <- cbind(future_years, pred)
+colnames(projection) <- c("Year","Forecast","Lower","Upper")
+print(projection)
+
+```
+
+
+```{r}
+# visuals
+ggplot() +
+  geom_point(data = yearly_df, aes(x = Year, y = Total_Passengers)) +
+  geom_smooth(data = yearly_df, aes(x = Year, y = Total_Passengers), method = "lm", se = FALSE) +
+  geom_line(data = projection, aes(x = Year, y = Forecast)) +
+  geom_point(data = projection, aes(x = Year, y = Forecast)) +
+  geom_errorbar(data = projection, aes(x = Year, ymin = Lower, ymax = Upper), width = 0.2) +
+  labs(
+    title = "Passenger Projection (2026–2030) using Regression",
+    x = "Year",
+    y = "Total Passengers (Yearly)"
+  )
+```
+Insight from the analysis using Regression
+
+The regression line shows that there has been an upward trend in annual passenger volume at the terminal, signifying a process of recovery and growth after an initial disruption of travel demand. The aggregation of weekly values into an annual sum helps in understanding overall long-term trends of demand, which are of much relevance in planning and design related to infrastructure rather than short-term trends. The results of the regression equation show that passenger volumes are going to rise throughout the period ending 2030.
+
+However, the linear characteristic of this model implies that it grows at a constant rate and fails to consider possible structural adjustments like an economic slowdown, expansion of services, and economic policy interventions. The use of prediction intervals brings into perspective an important aspect of uncertainty relative to the point forecasts to underscore that planning should be made for a variety of possible outcomes and not for a single point estimate. In light of the key findings of this research study, there exists a reasonable benchmark to guide strategic planning while pointing to the efficacy of combining regression analysis findings and/or time series analysis for informed planning.
+
+
+
+
+
+
+
+
+
