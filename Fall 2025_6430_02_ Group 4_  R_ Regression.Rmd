@@ -1,6 +1,6 @@
 ---
 title: "Port Of Authority"
-author: "Group 4"
+author: "Cynthia Folajimi"
 date: "2025-12-15"
 output:
   word_document: default
@@ -132,6 +132,7 @@ Insight from the analysis using Regression
 The regression line shows that there has been an upward trend in annual passenger volume at the terminal, signifying a process of recovery and growth after an initial disruption of travel demand. The aggregation of weekly values into an annual sum helps in understanding overall long-term trends of demand, which are of much relevance in planning and design related to infrastructure rather than short-term trends. The results of the regression equation show that passenger volumes are going to rise throughout the period ending 2030.
 
 However, the linear characteristic of this model implies that it grows at a constant rate and fails to consider possible structural adjustments like an economic slowdown, expansion of services, and economic policy interventions. The use of prediction intervals brings into perspective an important aspect of uncertainty relative to the point forecasts to underscore that planning should be made for a variety of possible outcomes and not for a single point estimate. In light of the key findings of this research study, there exists a reasonable benchmark to guide strategic planning while pointing to the efficacy of combining regression analysis findings and/or time series analysis for informed planning.
+
 
 
 
